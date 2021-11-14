@@ -5,6 +5,8 @@ use Slim\Factory\AppFactory;
 use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
 use Blog\PostMapper;
+use Blog\LatestPosts;
+use Blog\Slim\TwigMiddleware;
 
 require __DIR__ . '/vendor/autoload.php';
 
@@ -25,13 +27,16 @@ try {
     die();
 }
 
-$postMapper = new PostMapper($connection);
+
 
 // Create app
 $app = AppFactory::create();
 
-$app->get('/', function (Request $request, Response $response, $args) use ($view, $postMapper) {
-    $posts = $postMapper->getList('DESC');
+$app->add(new TwigMiddleware($view));
+
+$app->get('/', function (Request $request, Response $response) use ($view, $connection) {
+    $latestPosts = new LatestPosts($connection);
+    $posts = $latestPosts->get(10);
     $body = $view->render('index.html', [
         'posts' => $posts
     ]);
@@ -52,7 +57,28 @@ $app->get('/about2', function (Request $request, Response $response, $args) {
     return $response;
 });
 
-$app->get('/{url_key}', function (Request $request, Response $response, $args) use ($view, $postMapper) {
+$app->get('/blog[/{page}]', function (Request $request, Response $response, $args) use ($view, $connection) {
+    $postMapper = new PostMapper($connection);
+
+    $page = isset($args['page']) ? (int) $args['page'] : 1;
+    $limit = 2;
+
+    $posts = $postMapper->getList($page, $limit, 'DESC');
+
+    $totalCount = $postMapper->getTotalCount();
+    $body = $view->render('blog.html', [
+        'posts' => $posts,
+        'pagination' => [
+            'current' => $page,
+            'paging' => ceil($totalCount / $limit),
+        ],
+    ]);
+    $response->getBody()->write($body);
+    return $response;
+});
+
+$app->get('/{url_key}', function (Request $request, Response $response, $args) use ($view, $connection) {
+    $postMapper = new PostMapper($connection);
     $post = $postMapper->getByUrlKey((string)  $args['url_key']);
 
     if(empty($post)){
