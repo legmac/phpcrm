@@ -1,0 +1,23 @@
+{
+    "name": "root/html",
+    "description": "Yolo crm",
+    "type": "project",
+    "authors": [
+        {
+            "name": "Dmitri Bel",
+            "email": "legioner009@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "slim/slim": "4.*",
+        "slim/psr7": "^1.5",
+        "twig/twig": "^3.3",
+        "ext-PDO": "^7.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "Blog\\": "src/"
+        }
+    }
+}
